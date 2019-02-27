@@ -1,0 +1,7 @@
+population_size : 240
+maximum_generation_span : 100
+tournament_selection : 20
+elitism_number : 13
+probability_of_crossover : 0.95
+probability_of_mutation : 0.09
+experiment : best_para
