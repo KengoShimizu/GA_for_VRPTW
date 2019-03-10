@@ -48,16 +48,16 @@ public class Mutation {
 	return m;
 	}
 
-	public static Population constrained_route_reversal_mutation(Population pool, Load_problem load) {
+	public static Genetic_algorithm constrained_route_reversal_mutation(Genetic_algorithm ga, Load_problem load) {
 		long seed = Runtime.getRuntime().freeMemory();
 		Random rnd = new Random(seed);
 		double d;
 		Mutation mm = new Mutation();
-		for (int i=0; i<pool.chrom.size(); i++) {
+		for (int i=0; i<ga.pool.size(); i++) {
 			d = Math.random();
 			if (d<load.pm) {  //Crossover occers
-				List<Integer> vehi = new ArrayList<Integer>(pool.chrom.get(i).get(rnd.nextInt(pool.chrom.get(i).size())));
-				int vehi_ind = pool.chrom.get(i).indexOf(vehi);
+				List<Integer> vehi = new ArrayList<Integer>(ga.pool.get(i).chrom.get(rnd.nextInt(ga.pool.get(i).chrom.size())));
+				int vehi_ind = ga.pool.get(i).chrom.indexOf(vehi);
 				if (vehi.size() == 1) {
 					break;
 				}
@@ -73,21 +73,21 @@ public class Mutation {
 					int j = mm.j;
 					if (distance_temp == 0.0) { //violate the constrain
 						//a new route is created using customer who violate constrain
-						pool.capa.get(i).set(vehi_ind, pool.capa.get(i).get(vehi_ind) - load.customer.get(vehi.get(j)).demand);
+						ga.pool.get(i).capa.set(vehi_ind, ga.pool.get(i).capa.get(vehi_ind) - load.customer.get(vehi.get(j)).demand);
 						List<Integer> vehi_ = new ArrayList<Integer>(Arrays.asList(vehi.get(j)));
-						pool.chrom.get(i).add(vehi_);
-						pool.capa.get(i).add(load.customer.get(vehi.get(j)).demand);
+						ga.pool.get(i).chrom.add(vehi_);
+						ga.pool.get(i).capa.add(load.customer.get(vehi.get(j)).demand);
 						vehi.remove(vehi.get(j));
 							
-						mm = dist_check(pool.chrom.get(i).get(pool.chrom.get(i).size()-1), load);
+						mm = dist_check(ga.pool.get(i).chrom.get(ga.pool.get(i).chrom.size()-1), load);
 						distance_temp = mm.distance_temp;
 						j = mm.j;
-						pool.total_time.get(i).add(distance_temp);
+						ga.pool.get(i).total_time.add(distance_temp);
 					}
 					else { //meet the constrain
-						pool.total_time.get(i).set(vehi_ind, distance_temp);
+						ga.pool.get(i).total_time.set(vehi_ind, distance_temp);
 						List<Integer> vehi_ = new ArrayList<Integer>(vehi);
-						pool.chrom.get(i).set(vehi_ind, vehi_);
+						ga.pool.get(i).chrom.set(vehi_ind, vehi_);
 					}
 				}
 
@@ -111,25 +111,25 @@ public class Mutation {
 						int j = mm.j;
 						if (distance_temp == 0.0) {//violate the constrain
 							//a new route is created using customer who violate constrain
-							pool.capa.get(i).set(vehi_ind, pool.capa.get(i).get(vehi_ind) - load.customer.get(vehi.get(j)).demand);
+							ga.pool.get(i).capa.set(vehi_ind, ga.pool.get(i).capa.get(vehi_ind) - load.customer.get(vehi.get(j)).demand);
 							if (count == 0) {
 								List<Integer> vehi_1 = new ArrayList<Integer>(Arrays.asList(vehi.get(j)));
-								pool.chrom.get(i).add(vehi_1);
-								pool.capa.get(i).add(load.customer.get(vehi.get(j)).demand);
+								ga.pool.get(i).chrom.add(vehi_1);
+								ga.pool.get(i).capa.add(load.customer.get(vehi.get(j)).demand);
 								vehi.remove(vehi.get(j));
 								
-								mm = dist_check(pool.chrom.get(i).get(pool.chrom.get(i).size()-1), load);
-								pool.total_time.get(i).add(mm.distance_temp);
+								mm = dist_check(ga.pool.get(i).chrom.get(ga.pool.get(i).chrom.size()-1), load);
+								ga.pool.get(i).total_time.add(mm.distance_temp);
 								count += 1;
 							}
 							else if (count == 1) {
 								List<Integer> vehi_1 = new ArrayList<Integer>(Arrays.asList(vehi.get(j)));
-								pool.chrom.get(i).add(vehi_1);
-								pool.capa.get(i).add(load.customer.get(vehi.get(j)).demand);
+								ga.pool.get(i).chrom.add(vehi_1);
+								ga.pool.get(i).capa.add(load.customer.get(vehi.get(j)).demand);
 								vehi.remove(vehi.get(j));
 								
-								mm = dist_check(pool.chrom.get(i).get(pool.chrom.get(i).size()-1), load);
-								pool.total_time.get(i).add(mm.distance_temp);
+								mm = dist_check(ga.pool.get(i).chrom.get(ga.pool.get(i).chrom.size()-1), load);
+								ga.pool.get(i).total_time.add(mm.distance_temp);
 								break;
 							}
 							else {
@@ -137,15 +137,15 @@ public class Mutation {
 							}
 						}
 						else { //meet the constrain
-							pool.total_time.get(i).set(vehi_ind, distance_temp);
+							ga.pool.get(i).total_time.set(vehi_ind, distance_temp);
 							List<Integer> vehi_1 = new ArrayList<Integer>(vehi);
-							pool.chrom.get(i).set(vehi_ind, vehi_1);
+							ga.pool.get(i).chrom.set(vehi_ind, vehi_1);
 						}
 					}
 				}
 			}
 		}
-		return pool;
+		return ga;
 	}
 }
 	

@@ -20,6 +20,10 @@ public class Load_problem{
 	String benchmark;
 	String experiment;
 	
+	//ending criteria
+	float time;
+	int improve;
+
 	//constrain information
 	int max_vehi_num;
 	int max_capacity;
@@ -85,7 +89,7 @@ public class Load_problem{
 		}
 		//args[1] = parameters
 		String txt2 = ".txt";
-		String path2 = "/Users/shimizukengo/Desktop/important/study_abroad/classes/Evolutional_Computation/assignment/program_java/_VRPTW_/src/parameter/";
+		String path2 = "/Users/shimizukengo/Desktop/important/study_abroad/research/GA_VRPTW/src/parameter/";
 		String parafilename_path2 = path2 + args[1] + txt2;
 		String inFilePath2 = parafilename_path2;
 		try(FileInputStream f2 = new FileInputStream(inFilePath2);) {
@@ -116,6 +120,12 @@ public class Load_problem{
 					problem.pm = Float.parseFloat(datas[2]);
 				}
 				if (count == 6){
+					problem.time = Float.parseFloat(datas[2]);
+				}
+				if (count == 7){
+					problem.improve = Integer.parseInt(datas[2]);
+				}
+				if (count == 8){
 					problem.experiment = String.valueOf(datas[2]);
 				}
 				count += 1;

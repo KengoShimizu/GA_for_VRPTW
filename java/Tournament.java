@@ -4,57 +4,61 @@ import java.util.List;
 import java.util.Random;
 
 public class Tournament {
-	public static Population k_tournament(Genetic_algorithm pops, Load_problem load){
-		pops.pool.chrom.clear();
-		pops.pool.capa.clear();
-		pops.pool.total_time.clear();
-		pops.pool.unsearved_customers.clear();
-		pops.pool.fitness.clear();
+	public static Genetic_algorithm k_tournament(Genetic_algorithm ga, Load_problem load, int gen_num){
 		long seed = Runtime.getRuntime().freeMemory();
 		Random rnd = new Random(seed);
+		
 		for (int i=0; i<load.pop_size; i++) {
 			List<Integer> x = new ArrayList<Integer>();
-			List<Double> fit_temp = new ArrayList<Double>();
+			List<Double> fitness = new ArrayList<Double>();
 			for (int j=0; j<load.tourn_k; j++) {
-				x.add(rnd.nextInt(pops.pop.chrom.size()));
-				fit_temp.add(pops.pop.fitness.get(x.get(j)));
+				x.add(rnd.nextInt(ga.pop.size())); //get index of solution at random 
+				fitness.add(ga.pop.get(x.get(j)).fitness);; //get fitness at this solution
 			}
-			double minfit = fit_temp.get(0);
-			for (int index = 1; index<fit_temp.size(); index ++) {
-	            minfit = Math.min(minfit, fit_temp.get(index));
+			double minfit = fitness.get(0);
+			for (int index = 1; index<fitness.size(); index ++) {
+	            minfit = Math.min(minfit, fitness.get(index)); //find the minimum fitness out of the solutions
 	        }
-			if (Collections.frequency(fit_temp, minfit) != 1) {
+			if (Collections.frequency(fitness, minfit) != 1) { //in case where the number of minimum fitness is not only one
 				List<Integer> same_fitness_ind1 = new ArrayList<Integer>();
 				int count_ = 0;
-				for(double x1: fit_temp){	//
-					if(x1 == minfit){		// selected because the same distance
+				for(double x1: fitness){
+					if(x1 == minfit){
 						same_fitness_ind1.add(count_);
 					}
 					count_ += 1;
-				}					// selected because of the same fitness
+				}
 				int y = rnd.nextInt(same_fitness_ind1.size());
-				List<List<Integer>> chrom = new ArrayList<List<Integer>>(pops.pop.chrom.get(x.get(y)));
-				List<Integer> capa = new ArrayList<Integer>(pops.pop.capa.get(x.get(y)));
-				List<Double> distance = new ArrayList<Double>(pops.pop.total_time.get(x.get(y)));
-				List<Integer> vect_taboo = new ArrayList<Integer>(pops.pop.unsearved_customers.get(x.get(y)));
-				pops.pool.chrom.add(chrom);
-				pops.pool.capa.add(capa);
-				pops.pool.total_time.add(distance);
-				pops.pool.unsearved_customers.add(vect_taboo);
-				pops.pool.fitness.add(pops.pop.fitness.get(x.get(y)));
+				switch(gen_num) {
+				case 1: 
+					Population pool = ga.pop.get(y).clone();
+					pool.init(pool);
+					ga.pool.add(pool);
+					break;
+				
+				default: 
+					pool = ga.pop.get(y).clone();
+					pool.init(pool);
+					ga.pool.set(i, pool);
+				}
+				
 			}
 			else {
-				List<List<Integer>> chrom = new ArrayList<List<Integer>>(pops.pop.chrom.get(x.get(fit_temp.indexOf(minfit))));
-				List<Integer> capa = new ArrayList<Integer>(pops.pop.capa.get(x.get(fit_temp.indexOf(minfit))));
-				List<Double> distance = new ArrayList<Double>(pops.pop.total_time.get(x.get(fit_temp.indexOf(minfit))));
-				List<Integer> vect_taboo = new ArrayList<Integer>(pops.pop.unsearved_customers.get(x.get(fit_temp.indexOf(minfit))));
-				pops.pool.chrom.add(chrom);
-				pops.pool.capa.add(capa);
-				pops.pool.total_time.add(distance);
-				pops.pool.unsearved_customers.add(vect_taboo);
-				pops.pool.fitness.add(pops.pop.fitness.get(x.get(fit_temp.indexOf(minfit))));
+				switch(gen_num) {
+				case 1: 
+					Population pool = ga.pop.get(x.get(fitness.indexOf(minfit))).clone();
+					pool.init(pool);
+					ga.pool.add(pool);
+					break;
+				
+				default: 
+					pool = ga.pop.get(x.get(fitness.indexOf(minfit))).clone();
+					pool.init(pool);
+					ga.pool.set(i, pool);
+				}
+				
 			}
 		}
-		return pops.pool;
+		return ga;
 	}
 }

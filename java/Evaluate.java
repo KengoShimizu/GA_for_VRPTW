@@ -5,51 +5,39 @@ import java.util.List;
 import java.util.Random;
 
 public class Evaluate {
-	Population pop = new Population();
-	Population elite_pop = new Population();
-	List<Double> best_fit = new ArrayList<Double>();
-	public static Evaluate weighted_sum_method(Load_problem load, Genetic_algorithm pops, int gen_num, List<Double> best_fit){
-		Evaluate e = new Evaluate();
-		pops.pop.fitness.clear();
-		int alpha = 30;
-		double beta = 0.1;
+	public static Genetic_algorithm weighted_sum_method(Load_problem load, Genetic_algorithm ga, int gen_num){
+		for (int i=0; i<ga.pop.size(); i++) ga.pop.get(i).fitness = 0.0; //initialize fitness
+		int alpha = 30; //weight for the number of vehicle
+		double beta = 0.1; //weight for the total distance
+		
+		List<Double> fitness = new ArrayList<Double>(); //put each fitness of solutions
 		for (int i=0; i<load.pop_size; i++) {
-			int vehi_num = pops.pop.chrom.get(i).size();
-			double dist_fit = 0;
-			for (int j=0; j<pops.pop.total_time.get(i).size(); j++) {
-				dist_fit += pops.pop.total_time.get(i).get(j);
-			}
-			pops.pop.fitness.add(alpha * vehi_num + beta * dist_fit);
+			int vehi_num = ga.pop.get(i).chrom.size();
+			ga.pop.get(i).fitness = alpha * vehi_num + beta * ga.pop.get(i).J;
+			fitness.add(ga.pop.get(i).fitness);
 		}
-		e.pop = pops.pop;
-
-		List<Double> fitness_sort = new ArrayList<Double>(pops.pop.fitness);
+		List<Double> fitness_sort = new ArrayList<Double>(fitness);
 		Collections.sort(fitness_sort);
 
 		// select elite chromosoms
 		int pre_elite = 999999;
 		List<Integer> same_fitness = new ArrayList<Integer>();
 		int counter = 0;
-		pops.elite_pop.chrom.clear();
-		pops.elite_pop.capa.clear();
-		pops.elite_pop.total_time.clear();
-		pops.elite_pop.unsearved_customers.clear();
-		pops.elite_pop.fitness.clear();
 
 		long seed = Runtime.getRuntime().freeMemory();
 		Random rnd = new Random(seed);
 
 		for (int i=0; i<load.elitism; i++) {
-			int elite = pops.pop.fitness.indexOf(fitness_sort.get(i)); //nearest customer index
-			if (pre_elite == elite) {
-				List<Integer> same_fitness_choose = new ArrayList<Integer>();// a case where the same index(elite) is
+			int elite = fitness.indexOf(fitness_sort.get(i)); //elite index
+			if (pre_elite == elite) { //in case where pre_elite and elite is same
+				List<Integer> same_fitness_choose = new ArrayList<Integer>();
 				int count_ = 0;
-				for(double x: pops.pop.fitness){	//
-					if(x == fitness_sort.get(i)){		// selected because the same distance
+				for(double x: fitness){	
+					if(x == fitness_sort.get(i)){		
 						same_fitness.add(count_);
 					}
 					count_ += 1;
-				}					// selected because of the same fitness
+				}					
 				counter += 1;
 				for (int j=counter; j<same_fitness.size(); j++) {
 					same_fitness_choose.add(same_fitness.get(j));
@@ -64,38 +52,27 @@ public class Evaluate {
 			if (same_fitness.size() > 2) {
 				pre_elite = same_fitness.get(0);
 			}
-			List<List<Integer>> chrom = new ArrayList<List<Integer>>(pops.pop.chrom.get(elite));
-			List<Integer> capa = new ArrayList<Integer>(pops.pop.capa.get(elite));
-			List<Double> distance = new ArrayList<Double>(pops.pop.total_time.get(elite));
-			List<Integer> vect_taboo = new ArrayList<Integer>(pops.pop.unsearved_customers.get(elite));
-			e.elite_pop.chrom.add(chrom);
-			e.elite_pop.capa.add(capa);
-			e.elite_pop.total_time.add(distance);
-			e.elite_pop.unsearved_customers.add(vect_taboo);
-			e.elite_pop.fitness.add(pops.pop.fitness.get(elite));
+			
+			Population elite_pop = ga.pop.get(elite).clone();
+			elite_pop.init(elite_pop);
+			ga.elite_pop.set(i, elite_pop);
 		}
-		double min = pops.pop.fitness.get(0); // discover the minimum numeric number
-		for (int index = 1; index<pops.pop.fitness.size(); index ++) {
-            min = Math.min(min, pops.pop.fitness.get(index));
+		double min = ga.pop.get(0).fitness; // discover the minimum fitness
+		int best_index = 0;
+		for (int index = 1; index<ga.pop.size(); index ++) {
+            if (min > ga.pop.get(index).fitness) {
+            	min = ga.pop.get(index).fitness;
+            	best_index = index;
+            }
         }
-		e.best_fit.add(min);
-		return e;
+		ga.best_fit_ind = best_index;
+		return ga;
 	}
 
-	public static Evaluate summed_ranks(Load_problem load, Genetic_algorithm pops, int gen_num, List<Double> best_fit){
+	public static Genetic_algorithm summed_ranks(Load_problem load, Genetic_algorithm ga, int gen_num){
 		long seed = Runtime.getRuntime().freeMemory();
 		Random rnd = new Random(seed);
-		Evaluate e = new Evaluate();
-		pops.pop.fitness.clear();
-		for (int i=0; i<load.pop_size; i++) {
-			pops.pop.fitness.add(0.0);
-		}
-
-		pops.elite_pop.chrom.clear();
-		pops.elite_pop.capa.clear();
-		pops.elite_pop.total_time.clear();
-		pops.elite_pop.unsearved_customers.clear();
-		pops.elite_pop.fitness.clear();
+		for (int i=0; i<ga.pop.size(); i++) ga.pop.get(i).fitness = 0.0; //initialize fitness
 
 		List<Integer> same_fitness = new ArrayList<Integer>();
 		List<Integer> vehi_num = new ArrayList<Integer>();
@@ -103,11 +80,11 @@ public class Evaluate {
 		List<Integer> same_vehinum_ind = new ArrayList<Integer>();
 		List<Integer> same_distance_ind = new ArrayList<Integer>();
 		double distsum;
-		for (int i=0; i<pops.pop.chrom.size(); i++) {
-			vehi_num.add(pops.pop.chrom.get(i).size());
+		for (int i=0; i<ga.pop.size(); i++) {
+			vehi_num.add(ga.pop.get(i).chrom.size());
 			distsum = 0.0;
-			for (int j=0; j<pops.pop.total_time.get(i).size(); j++) {
-				distsum += pops.pop.total_time.get(i).get(j);
+			for (int j=0; j<ga.pop.get(i).total_time.size(); j++) {
+				distsum += ga.pop.get(i).total_time.get(j);
 			}
 			distance.add(distsum);
 		}
@@ -132,10 +109,10 @@ public class Evaluate {
 			}
 			for (int j=0; j<same_vehinum_ind.size(); j++) {
 				if (same_vehinum_ind.size() != 1) {
-					pops.pop.fitness.set(same_vehinum_ind.get(j), (double) (same_vehinum_ind.size()/2 + k) / pops.pop.chrom.size());
+					ga.pop.get(same_vehinum_ind.get(j)).fitness = (double) (same_vehinum_ind.size()/2 + k) / ga.pop.size();
 				}
 				else {
-					pops.pop.fitness.set(same_vehinum_ind.get(j), (double) k / pops.pop.chrom.size());
+					ga.pop.get(same_vehinum_ind.get(j)).fitness = (double) k / ga.pop.size();
 				}
 			}
 			k += same_vehinum_ind.size();
@@ -159,11 +136,11 @@ public class Evaluate {
 				}
 				for (int j=0; j<same_distance_ind.size(); j++) {
 					if (same_distance_ind.size() != 1) {
-						pops.pop.fitness.set(same_distance_ind.get(j), pops.pop.fitness.get(same_distance_ind.get(j)) + (same_distance_ind.size()/2+ k) / pops.pop.chrom.size());
+						ga.pop.get(same_distance_ind.get(j)).fitness = ga.pop.get(same_distance_ind.get(j)).fitness + (same_distance_ind.size()/2+ k) / ga.pop.size();
 						distance.set(same_distance_ind.get(j), 0.0);
 					}
 					else {
-						pops.pop.fitness.set(same_distance_ind.get(j), pops.pop.fitness.get(same_distance_ind.get(j)) + k / pops.pop.chrom.size());
+						ga.pop.get(same_distance_ind.get(j)).fitness = ga.pop.get(same_distance_ind.get(j)).fitness + k / ga.pop.size();
 						distance.set(same_distance_ind.get(j), 0.0);
 					}
 				}
@@ -176,18 +153,23 @@ public class Evaluate {
 			}
 		}
 
-		List<Double> fitness_sort = new ArrayList<Double>(pops.pop.fitness);
+		List<Double> fitness = new ArrayList<Double>(); //put each fitness of solutions
+		for (int i1=0; i1<load.pop_size; i1++) {
+			fitness.add(ga.pop.get(i1).fitness);
+		}
+		List<Double> fitness_sort = new ArrayList<Double>(fitness);
 		Collections.sort(fitness_sort);
+		
 		int pre_elite = 999999;
 		List<Integer> same_fitness1 = new ArrayList<Integer>();
 		int counter = 0;
 
 		for (int i1=0; i1<load.elitism; i1++) {
-			int elite = pops.pop.fitness.indexOf(fitness_sort.get(i1)); //nearest customer index
+			int elite = fitness.indexOf(fitness_sort.get(i1)); //nearest customer index
 			if (pre_elite == elite) {
 				List<Integer> same_fitness_choose = new ArrayList<Integer>();	// a case where the same index(elite) is
 				int count_ = 0;
-				for(double x: pops.pop.fitness){
+				for(double x: fitness){
 					if(x == fitness_sort.get(i1)){
 						same_fitness1.add(count_);
 					}
@@ -206,31 +188,20 @@ public class Evaluate {
 			if (same_fitness1.size() > 2) {														//
 				pre_elite = same_fitness1.get(0);
 			}
-			List<List<Integer>> chrom = new ArrayList<List<Integer>>(pops.pop.chrom.get(elite));
-			List<Integer> capa = new ArrayList<Integer>(pops.pop.capa.get(elite));
-			List<Double> distance1 = new ArrayList<Double>(pops.pop.total_time.get(elite));
-			List<Integer> vect_taboo = new ArrayList<Integer>(pops.pop.unsearved_customers.get(elite));
-			e.elite_pop.chrom.add(chrom);
-			e.elite_pop.capa.add(capa);
-			e.elite_pop.total_time.add(distance1);
-			e.elite_pop.unsearved_customers.add(vect_taboo);
-			e.elite_pop.fitness.add(pops.pop.fitness.get(elite));
-			e.pop = pops.pop;
+			Population elite_pop = ga.pop.get(elite).clone();
+			elite_pop.init(elite_pop);
+			ga.elite_pop.set(i, elite_pop);
 		}
-		return e;
+		return ga;
 	}
 
-	public static Evaluate pareto_ranking(Load_problem load, Genetic_algorithm pops, int gen_num, List<Double> best_fit){
+	public static Genetic_algorithm pareto_ranking(Load_problem load, Genetic_algorithm ga, int gen_num){
 		long seed = Runtime.getRuntime().freeMemory();
 		Random rnd = new Random(seed);
-		Evaluate e = new Evaluate();
 
-		//initialize fitnesses
-		pops.pop.fitness.clear();
-		for (int i=0; i<load.pop_size; i++) {
-			pops.pop.fitness.add(0.0);
-		}
-
+		for (int i=0; i<ga.pop.size(); i++) ga.pop.get(i).fitness = 0.0; //initialize fitness
+		
+		/*
 		//re-calculate total_time
 		pops.pop.total_time.clear();
 		for (int i=0; i<pops.pop.chrom.size(); i++) {
@@ -241,50 +212,21 @@ public class Evaluate {
 			List<Double> dist_temp_ = new ArrayList<Double>(dist_temp);
 			pops.pop.total_time.add(dist_temp_);
 		}
-
-		//re-calculate total_distance
-		pops.pop.total_distance.clear();
-		for (int i=0; i<pops.pop.chrom.size(); i++) {
-			List<Double> dist_temp = new ArrayList<Double>();
-			for (int j=0; j<pops.pop.chrom.get(i).size(); j++) {
-				dist_temp.add(Crossover.dist_culc(pops.pop.chrom.get(i).get(j), load));
-			}
-			List<Double> dist_temp_ = new ArrayList<Double>(dist_temp);
-			pops.pop.total_distance.add(dist_temp_);
-		}
-
-		//initialize elite
-		pops.elite_pop.chrom.clear();
-		pops.elite_pop.capa.clear();
-		pops.elite_pop.total_time.clear();
-		pops.elite_pop.unsearved_customers.clear();
-		pops.elite_pop.fitness.clear();
+		*/
 
 		List<Integer> same_fitness = new ArrayList<Integer>();
-		List<Integer> vehi_num = new ArrayList<Integer>(); //total number of vehicle
-
-		double timesum;
-		double distsum;
-		pops.pop.L.clear();
-		pops.pop.J.clear();
+		
 		List<Integer> nonassinged_rank = new ArrayList<Integer>();
-		for (int i=0; i<pops.pop.chrom.size(); i++) {
-			vehi_num.add(pops.pop.chrom.get(i).size());
+		for (int i=0; i<ga.pop.size(); i++) {
 			nonassinged_rank.add(i);
-			timesum = 0.0;
-			distsum = 0.0;
-			for (int j=0; j<pops.pop.total_time.get(i).size(); j++) {
-				timesum += pops.pop.total_time.get(i).get(j);
-				distsum += pops.pop.total_distance.get(i).get(j);
-			}
-			pops.pop.L.add(timesum); //total time of each vehicle
-			pops.pop.J.add(distsum); //total distance of each vehicle
+			ga.pop.get(i).n = ga.pop.get(i).chrom.size();
 		}
-
 
 		double rank = 1.0;
 		int count = 0;
-		while (pops.pop.fitness.contains(0.0)){
+		
+		ga.pareto_optimal_sols.clear();
+		while (nonassinged_rank.size() != 0){
 			Iterator<Integer> it = nonassinged_rank.iterator();
 			while(it.hasNext()){
 				int i = it.next();
@@ -292,31 +234,47 @@ public class Evaluate {
 				Iterator<Integer> it1 = nonassinged_rank.iterator();
 				while (it1.hasNext()) {
 					int j = it1.next();
-					if (vehi_num.get(i) >= vehi_num.get(j) && pops.pop.J.get(i) >= pops.pop.J.get(j) && i != j) {
+					if (ga.pop.get(i).n >= ga.pop.get(j).n && ga.pop.get(i).J > ga.pop.get(j).J && i != j) {
 						count = count + 1; //dominated
 						break;
 					}
 				}
 				if (count == 0) { //the case where index i is not deminated
-					pops.pop.fitness.set(i, rank);
+					ga.pop.get(i).fitness = rank;
+					if (ga.pop.get(i).fitness == 1.0) {
+						for (int k=0; k<ga.pareto_optimal_sols.size(); k++) {
+							if (ga.pop.get(i).n == ga.pareto_optimal_sols.get(k).n &&
+								ga.pop.get(i).J == ga.pareto_optimal_sols.get(k).J) {
+								ga.pareto_optimal_sols.remove(k);
+							}
+						}
+						Population pareto = ga.pop.get(i).clone();
+						pareto.init(pareto);
+						ga.pareto_optimal_sols.add(pareto);
+					}
 					it.remove(); //index that is assigned rank is eliminated from list
 				}
 			}
 			rank = rank + 1.0;
 		}
 
-		List<Double> fitness_sort = new ArrayList<Double>(pops.pop.fitness);
+		List<Double> fitness = new ArrayList<Double>(); //put each fitness of solutions
+		for (int i=0; i<load.pop_size; i++) {
+			fitness.add(ga.pop.get(i).fitness);
+		}
+		
+		List<Double> fitness_sort = new ArrayList<Double>(fitness);
 		Collections.sort(fitness_sort);
 		int pre_elite = 999999;
 		List<Integer> same_fitness1 = new ArrayList<Integer>();
 		int counter = 0;
 
 		for (int i=0; i<load.elitism; i++) {
-			int elite = pops.pop.fitness.indexOf(fitness_sort.get(i)); //nearest customer index
+			int elite = fitness.indexOf(fitness_sort.get(i)); //nearest customer index
 			if (pre_elite == elite) {
 				List<Integer> same_fitness_choose = new ArrayList<Integer>();	// a case where the same index(elite) is
 				int count_ = 0;
-				for(double x: pops.pop.fitness){
+				for(double x: fitness){
 					if(x == fitness_sort.get(i)){
 						same_fitness1.add(count_);
 					}
@@ -335,20 +293,22 @@ public class Evaluate {
 			if (same_fitness1.size() > 2) {														//
 				pre_elite = same_fitness1.get(0);
 			}
-
-			List<List<Integer>> chrom = new ArrayList<List<Integer>>(pops.pop.chrom.get(elite));
-			List<Integer> capa = new ArrayList<Integer>(pops.pop.capa.get(elite));
-			List<Double> distance1 = new ArrayList<Double>(pops.pop.total_time.get(elite));
-			List<Integer> vect_taboo = new ArrayList<Integer>(pops.pop.unsearved_customers.get(elite));
-			e.elite_pop.chrom.add(chrom);
-			e.elite_pop.capa.add(capa);
-			e.elite_pop.total_time.add(distance1);
-			e.elite_pop.unsearved_customers.add(vect_taboo);
-			e.elite_pop.fitness.add(pops.pop.fitness.get(elite));
-			e.pop = pops.pop;
+			
+			switch(gen_num) {
+			case 0: 
+				Population elite_pop = ga.pop.get(elite).clone();
+				elite_pop.init(elite_pop);
+				ga.elite_pop.add(elite_pop);
+				break;
+			
+			default: 
+				elite_pop = ga.pop.get(elite).clone();
+				elite_pop.init(elite_pop);
+				ga.elite_pop.set(i, elite_pop);
+			}
 		}
 
-		return e;
+		return ga;
 	}
 
 }
